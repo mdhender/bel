@@ -1,4 +1,5 @@
-﻿The Bel Language   12 Oct 2019
+﻿;; from https://sep.yimg.com/ty/cdn/paulgraham/bellanguage.txt?t=1595850613&
+The Bel Language   12 Oct 2019
 
 
 In 1960 John McCarthy described a new type of programming language
@@ -4521,7 +4522,6 @@ Franke, Joel Franusic, Jared Friedman, Daniel Gackle, Michael Hartl,
 Matt Knox, Shriram Krishnamurthi, Kevin Lacker, Jessica Livingston, 
 Bill Moorier, Olin Shivers, Nick Sivo, and especially Robert Morris 
 for help with Bel.
-
 
 
 

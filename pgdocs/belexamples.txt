@@ -1,3 +1,4 @@
+;; https://sep.yimg.com/ty/cdn/paulgraham/belexamples.txt?t=1595850613&
 Bel Examples for Lisp Programmers   12 Oct 2019
 
 
@@ -114,4 +115,3 @@ And here's the pop macro:
 
 The best way to see what Bel programs are like, of course, is to read
 the Bel source, which is a Bel program.
-

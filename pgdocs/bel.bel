@@ -1,5 +1,5 @@
+;; from https://sep.yimg.com/ty/cdn/paulgraham/bel.bel?t=1595850613&
 ; Bel in Bel. 9 October 2019, 9:14 GMT
-; from https://sep.yimg.com/ty/cdn/paulgraham/bel.bel
 
 
 (def no (x)
@@ -1799,4 +1799,3 @@
     (if (id v eof)  nil
         (isa!tab v) (inst name (cddr v))
                     (err 'inst-nontable))))
-

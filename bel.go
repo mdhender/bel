@@ -25,8 +25,6 @@
 // Package bel implements an interpreter for Paul Graham's Bel.
 package bel
 
-import "github.com/mdhender/bel/internal/interpreter"
-
 func Version() string {
-	return interpreter.Version()
+	return "0.0.0"
 }
