@@ -1,0 +1,41 @@
+= Building Bel
+Michael D Henderson <mdhender@mdhender.com>
+v0.1, 2021-01-16
+:doctype: book
+:sectnums:
+:sectnumlevels: 5
+:partnums:
+:toc: right
+
+:sectnums!:
+== Copyright
+
+    Copyright (c) 2021 by Michael D Henderson. All rights reserved.
+
+Bel is based on the http://www.paulgraham.com/bel.html[writings] of Paul Graham.
+All of Mr. Graham's materials are copyright by him.
+
+This document is based on the https://www.lwh.jp/lisp/index.html[Building LISP] tutorial by Leo Howell.
+All of Mr. Howell's materials are copyright by him.
+
+== Introduction
+Bel is a LISP dialect created by Paul Graham to explore some ideas he had.
+This document (and this repository) is my attempt to understand Bel and LISP.
+
+The document is inspired by Graham's essays and an excellent
+https://www.lwh.jp/lisp/index.html[tutorial] written by Leo Howell.
+As Howell says,
+
+____
+The best way to understand how something works is to try to build it for yourself. Reading somebody else's explanation might satisfy your curiosity, but without the experience of falling into all the little traps it is difficult to get a feel for why something is designed a certain way.
+____
+
+I make no promise that any of this code will be elegant or fast or an example of how to do something.
+It's written only to help me understand a problem.
+
+If you find errors, please feel free to open an issue against the https://github.com/mdhender/bel[GitHub repository].
+
+== Glossary
+
+Bel::
+A LISP dialect created by Paul Graham.
