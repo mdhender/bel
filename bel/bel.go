@@ -1,18 +1,26 @@
-// bel: a bel interpreter
-// Copyright (C) 2019  Michael D Henderson
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/*
+ * Bel - an implementation of Paul Graham's Bel
+ *
+ * Copyright (c) 2021 Michael D Henderson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 // Package bel is the interpreter for paul graham's BEL
 package bel
@@ -29,47 +37,42 @@ type VM struct {
 	initFiles []string
 
 	// nil is the ubiquitous empty list
-	t     *cell  // t is the truthy cell.cell
-	o     *cell  // something?
-	apply *cell  // something?
-	ins   stream // default input cellStream
-	outs  stream // default output cellStream
-	errs  stream // default error cellStream
+	t     *cell       // t is the truthy cell.cell
+	o     *cell       // something?
+	apply *cell       // something?
+	ins   []io.Reader // default input cellStream
+	outs  []io.Writer // default output cellStream
+	errs  []io.Writer // default error cellStream
 
-	frames frameStack
+	frames  frameStack
 	scanner *scanner
 
 	// following are used during eval
 	global struct {
-		args *cell
-		env *cell
-		op   opcode
-		saveRegisters *cell
-		currentEnv *cell
-		currentToken *token
-		printFlag int
-		isTopLevel bool
+		args             *cell
+		env              *cell
+		op               opcode
+		saveRegisters    *cell
+		currentEnv       *cell
+		currentToken     *token
+		printFlag        int
+		isTopLevel       bool
 		tempOutputStream *cell
 	}
 }
 
 type stream struct {
-	r []io.Reader
-	w []io.Writer
+	name string
+	r    io.Reader
+	w    io.Writer
 }
 
 func NewVM(initFiles []string) *VM {
 	vm := &VM{
-		t: _TRUE,
-		ins: stream{
-			r: []io.Reader{os.Stdin},
-		},
-		outs: stream{
-			w: []io.Writer{os.Stdout},
-		},
-		errs: stream{
-			w: []io.Writer{os.Stderr},
-		},
+		t:    _TRUE,
+		ins:  []io.Reader{os.Stdin},
+		outs: []io.Writer{os.Stdout},
+		errs: []io.Writer{os.Stderr},
 	}
 	vm.global.env = mkpair(_NIL, _NIL)
 
@@ -94,10 +97,8 @@ func (vm *VM) Run() {
 }
 
 func (vm *VM) Execute(b []byte) ([]*cell, error) {
-	vm.ins.pushReader(bytes.NewReader(b))
 	var result []*cell
-	result = append(result, vm.eval(opcLoad, mkpair(mkstring("source.bel"), _NIL)))
-	vm.ins.popReader()
+	result = append(result, vm.eval(opcLoad, mkpair(mkstreamr("source.bel", bytes.NewReader(b)), _NIL)))
 	return result, nil
 }
 
@@ -110,54 +111,49 @@ func (vm *VM) print(arg *cell) *cell {
 }
 
 func (vm *VM) popReader() {
-	vm.ins.popReader()
+	if len(vm.ins) == 0 {
+		panic("vm: ins: underflow")
+	}
+	vm.ins[0] = nil
+	vm.ins = vm.ins[1:]
 }
 
 func (vm *VM) pushReader(r io.Reader) {
-	vm.ins.pushReader(r)
+	vm.ins = append([]io.Reader{r}, vm.ins...)
+}
+
+func (vm *VM) popErrorWriter() {
+	if len(vm.errs) == 0 {
+		panic("vm: errs: underflow")
+	}
+	vm.errs[0] = nil
+	vm.errs = vm.errs[1:]
+}
+
+func (vm *VM) pushErrorWriter(w io.Writer) {
+	vm.errs = append([]io.Writer{w}, vm.errs...)
 }
 
 func (vm *VM) popWriter() {
-	vm.outs.popWriter()
+	if len(vm.outs) == 0 {
+		panic("vm: outs: underflow")
+	}
+	vm.outs[0] = nil
+	vm.outs = vm.outs[1:]
 }
 
 func (vm *VM) pushWriter(w io.Writer) {
-	vm.outs.pushWriter(w)
+	vm.outs = append([]io.Writer{w}, vm.outs...)
 }
 
-func (vm *VM) puts(s string) {
-	vm.outs.puts(s)
-}
-
-func (s stream) popReader() {
-	if !(len(s.r) > 1) {
-		return
-	}
-	s.r[0] = nil
-	s.r = s.r[:1]
-}
-
-func (s stream) pushReader(r io.Reader) {
-	s.r = append(s.r, r)
-}
-
-func (s stream) popWriter() {
-	if !(len(s.w) > 1) {
-		return
-	}
-	s.w[0] = nil
-	s.w = s.w[:1]
-}
-
-func (s stream) pushWriter(w io.Writer) {
-	s.w = append(s.w, w)
-}
-
-func (s stream) puts(str string) {
-	if len(s.w) == 0 {
+func (vm *VM) puts(str string) {
+	if len(vm.outs) == 0 {
 		fmt.Printf("error: no writer: %q\n", str)
 		return
 	}
-	fmt.Fprint(s.w[0], str)
+	fmt.Fprint(vm.outs[0], str)
 }
 
+func (s stream) puts(str string) {
+	fmt.Fprint(s.w, str)
+}

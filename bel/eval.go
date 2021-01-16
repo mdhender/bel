@@ -1,18 +1,26 @@
-// bel: a bel interpreter
-// Copyright (C) 2019  Michael D Henderson
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/*
+ * Bel - an implementation of Paul Graham's Bel
+ *
+ * Copyright (c) 2021 Michael D Henderson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 package bel
 
@@ -62,7 +70,7 @@ func (vm *VM) eval(op opcode, args *cell) *cell {
 				op = opcError0
 				continue
 			}
-			vm.pushWriter(vm.errs.w[0])
+			vm.pushWriter(vm.errs[0])
 			vm.puts("error: ")
 			vm.puts(asstring(car(vm.global.args)))
 			// output the remaining error strings
@@ -86,25 +94,31 @@ func (vm *VM) eval(op opcode, args *cell) *cell {
 			vm.global.printFlag = 1
 			op = opcP0List
 		case opcLoad:
-			// args: (filename)
-			name, args := car(vm.global.args), cdr(vm.global.args)
-			if !isstring(name) {
-				a := mkpair(mkstring("load: argument is not string"), _NIL)
+			// args: (filename) or (stream)
+			input, args := car(vm.global.args), cdr(vm.global.args)
+			if isstring(input) {
+				if asstring(input) == "*stdin*" {
+					panic(fmt.Sprintf("%s: interactive: not implemented", op))
+				}
+				a := mkpair(mkstring("load: filename: not implemented"), _NIL)
 				vm.global.args = a
 				op = opcError0
 				continue
-			} else if args != _NIL {
-				a := mkpair(mkstring("load: too many arguments"), _NIL)
-				vm.global.args = a
-				op = opcError0
+			} else if isstream(input) {
+				if args != _NIL {
+					a := mkpair(mkstring("load: too many arguments"), _NIL)
+					vm.global.args = a
+					op = opcError0
+					continue
+				}
+				fmt.Printf("\nloading %s\n", input._object._stream.name)
+				vm.pushReader(input._object._stream.r)
+				op = opcTopLevel0
 				continue
 			}
-			// interactive, need better way to test this
-			if asstring(name) == "*stdin*" {
-				panic(fmt.Sprintf("%s: interactive: not implemented", op))
-			}
-			fmt.Printf("\nloading %s\n", asstring(name))
-			op = opcTopLevel0
+			a := mkpair(mkstring("load: argument must be stream or string"), _NIL)
+			vm.global.args = a
+			op = opcError0
 		case opcP0List:
 			panic(fmt.Sprintf("%s: not implemented", op))
 		case opcP1List:

@@ -22,23 +22,24 @@
  * SOFTWARE.
  */
 
-package app
+package main
+
+//go:generate stringer -type opcode bel/opcode.go
 
 import (
-	"encoding/json"
-	"net/http"
+	"fmt"
+	"github.com/mdhender/bel"
+	"os"
 )
 
-func (srv *Server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
-}
-
-func (srv *Server) respond(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			// TODO: handle error
+func main() {
+	fmt.Println(bel.Version())
+	if bel.Version() == "" {
+		if err := run(); err != nil {
+			fmt.Printf("%+v\n", err)
+			os.Exit(2)
 		}
 	}
+
+	fmt.Println("thank you")
 }

@@ -1,18 +1,26 @@
-// bel: a bel interpreter
-// Copyright (C) 2019  Michael D Henderson
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/*
+ * Bel - an implementation of Paul Graham's Bel
+ *
+ * Copyright (c) 2021 Michael D Henderson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 package bel
 
@@ -123,24 +131,26 @@ func mkself() *cell {
 }
 
 // mkstreamr creates a new STREAM reader cell
-func mkstreamr(r io.Reader) *cell {
+func mkstreamr(name string, r io.Reader) *cell {
 	return &cell{
 		_flag: bfStream,
 		_object: object{
 			_stream: stream{
-				r: []io.Reader{r},
+				name: name,
+				r:    r,
 			},
 		},
 	}
 }
 
 // mkstreamw creates a new STREAM writer cell
-func mkstreamw(w io.Writer) *cell {
+func mkstreamw(name string, w io.Writer) *cell {
 	return &cell{
 		_flag: bfStream,
 		_object: object{
 			_stream: stream{
-				w: []io.Writer{w},
+				name: name,
+				w:    w,
 			},
 		},
 	}
@@ -174,9 +184,9 @@ func (a *cell) String() string {
 	} else if ispair(a) {
 		return fmt.Sprintf("(%s . %s)", car(a), cdr(a))
 	} else if isstream(a) {
-		if len(a._object._stream.r) != 0 {
+		if a._object._stream.r != nil {
 			return "#reader"
-		} else if len(a._object._stream.w) != 0 {
+		} else if a._object._stream.w != nil {
 			return "#writer"
 		}
 		return "#?stream?"

@@ -22,23 +22,34 @@
  * SOFTWARE.
  */
 
-package app
+package main
 
-import (
-	"encoding/json"
-	"net/http"
-)
-
-func (srv *Server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
+// bel has four fundamental data types
+type CHAR struct{}
+type PAIR struct {
+	left, right *PAIR
+}
+type STREAM struct{}
+type SYMBOL struct {
+	name string
 }
 
-func (srv *Server) respond(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			// TODO: handle error
-		}
-	}
+func (c *CHAR) IsAtom() bool {
+	return true
 }
+
+func (p *PAIR) IsAtom() bool {
+	return false
+}
+
+func (s *STREAM) IsAtom() bool {
+	return true
+}
+
+func (s *SYMBOL) IsAtom() bool {
+	return true
+}
+
+var NIL *PAIR
+
+

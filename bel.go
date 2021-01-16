@@ -22,23 +22,11 @@
  * SOFTWARE.
  */
 
-package app
+// Package bel implements an interpreter for Paul Graham's Bel.
+package bel
 
-import (
-	"encoding/json"
-	"net/http"
-)
+import "github.com/mdhender/bel/internal/interpreter"
 
-func (srv *Server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
-}
-
-func (srv *Server) respond(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			// TODO: handle error
-		}
-	}
+func Version() string {
+	return interpreter.Version()
 }

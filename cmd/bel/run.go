@@ -22,23 +22,57 @@
  * SOFTWARE.
  */
 
-package app
+package main
 
 import (
-	"encoding/json"
-	"net/http"
+	"fmt"
+	"github.com/mdhender/bel/app"
+	"github.com/mdhender/bel/bel"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
-func (srv *Server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
-	return json.NewDecoder(r.Body).Decode(v)
-}
-
-func (srv *Server) respond(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			// TODO: handle error
-		}
+func run() error {
+	config := struct {
+		root   string
+		port   int
+		public string
+	}{
+		root:   ".",
+		port:   3001,
+		public: "public",
 	}
+
+	var err error
+	if config.root == "" {
+		if config.root, err = os.Getwd(); err != nil {
+			return err
+		}
+	} else if err = os.Chdir(config.root); err != nil {
+		return err
+	}
+	log.Printf("[app] root %q\n", config.root)
+
+	src, err := ioutil.ReadFile("source.bel")
+	if err != nil {
+		return err
+	}
+
+	vm := bel.NewVM([]string{"source.bel"})
+	if vm == nil {
+		panic("missing vm")
+	}
+	c, err := vm.Execute(src)
+	fmt.Printf("[app] result %d\n", len(c))
+	if err != nil {
+		return err
+	}
+	fmt.Println(c)
+	if c != nil {
+		return nil
+	}
+
+	a := app.NewServer(config.port)
+	return a.ListenAndServe()
 }
